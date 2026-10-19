@@ -1,0 +1,122 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isOfficerOrAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'officer' || 
+        request.auth.token.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['officer', 'admin']
+      );
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // Users can update their name, photo, lang, but CANNOT modify points, level or role directly
+      allow update: if isOwner(userId) && 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'points', 'level', 'trustScore']);
+      allow write: if isOfficerOrAdmin();
+    }
+
+    // Cities collection
+    match /cities/{cityId} {
+      allow read: if true;
+      allow write: if isOfficerOrAdmin();
+    }
+
+    // Reports collection
+    match /reports/{reportId} {
+      allow read: if true;
+      // Anyone authenticated can create a report with valid coordinates and types
+      allow create: if isAuthenticated() &&
+        request.resource.data.lat is number &&
+        request.resource.data.lng is number &&
+        request.resource.data.status == 'reported' &&
+        request.resource.data.types.size() > 0;
+      
+      // Upvotes and still dirty can be incremented
+      allow update: if isAuthenticated() && (
+        isOfficerOrAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes', 'upvotedBy', 'stillDirtyCount', 'volunteerIds'])
+      );
+
+      // Subcollections: updates, comments, votes
+      match /updates/{updateId} {
+        allow read: if true;
+        allow create: if isOfficerOrAdmin() || resource.data.userId == request.auth.uid;
+      }
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated() && request.resource.data.text is string;
+      }
+
+      match /votes/{voteUserId} {
+        allow read: if true;
+        allow write: if isOwner(voteUserId);
+      }
+    }
+
+    // Organizations collection
+    match /organizations/{orgId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        resource.data.adminId == request.auth.uid || isOfficerOrAdmin()
+      );
+
+      match /members/{memberId} {
+        allow read: if true;
+        allow write: if isAuthenticated() && (
+          request.auth.uid == memberId || 
+          get(/databases/$(database)/documents/organizations/$(orgId)).data.adminId == request.auth.uid
+        );
+      }
+
+      match /messages/{messageId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+      }
+    }
+
+    // Events collection
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+
+      match /rsvps/{rsvpUserId} {
+        allow read: if true;
+        allow write: if isOwner(rsvpUserId) || isOfficerOrAdmin();
+      }
+    }
+
+    // Dustbins and Awareness
+    match /dustbins/{binId} {
+      allow read: if true;
+      allow write: if isOfficerOrAdmin();
+    }
+
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if isOfficerOrAdmin();
+    }
+
+    match /challenges/{challengeId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+  }
+}

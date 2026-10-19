@@ -1,0 +1,103 @@
+@import "leaflet/dist/leaflet.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #2E7D32;
+  --color-primary-dark: #1B5E20;
+  --color-accent: #66BB6A;
+  --color-surface: #E8F5E9;
+  --color-sky: #4FC3F7;
+  --color-sand: #F5EBD7;
+  --color-alert: #E53935;
+  --color-progress: #FB8C00;
+  --color-cleaned: #2E7D32;
+}
+
+.dark {
+  --color-primary: #388E3C;
+  --color-surface: #1B2E1C;
+  --color-sand: #1E293B;
+}
+
+body {
+  color: #1F2937;
+  background-color: #F8FAF8;
+  font-family: var(--font-nunito), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+.dark body {
+  color: #F3F4F6;
+  background-color: #0F172A;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card-eco {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(232, 245, 233, 0.85) 100%);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(102, 187, 106, 0.25);
+}
+
+.dark .glass-card-eco {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(27, 46, 28, 0.85) 100%);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(102, 187, 106, 0.2);
+}
+
+/* Custom map marker styles */
+.bin-pin-marker {
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bin-pin-marker:hover {
+  transform: scale(1.15) translateY(-4px);
+  z-index: 1000 !important;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* Sparkle animation for cleaned pins */
+@keyframes sparkleShine {
+  0% { transform: scale(0.8) rotate(0deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+  100% { transform: scale(0.8) rotate(360deg); opacity: 0; }
+}
+
+.sparkle-effect {
+  animation: sparkleShine 1.8s infinite ease-in-out;
+}
