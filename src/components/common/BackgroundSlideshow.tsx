@@ -113,35 +113,31 @@ export const BackgroundSlideshow: React.FC<BackgroundSlideshowProps> = ({
         );
       })}
 
-      {/* Sophisticated Dual Gradient Overlays for High Legibility */}
-      {/* Light mode: clean minty-white glass fade */}
-      <div className="absolute inset-0 bg-gradient-to-r from-[#F8FAF8]/95 via-[#F8FAF8]/85 to-[#F8FAF8]/75 dark:hidden pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#F8FAF8] via-transparent to-white/40 dark:hidden pointer-events-none" />
-
-      {/* Dark mode: deep emerald-slate glow */}
-      <div className="absolute inset-0 hidden dark:block bg-gradient-to-r from-[#0F172A]/95 via-[#0F172A]/85 to-[#064E3B]/70 pointer-events-none" />
-      <div className="absolute inset-0 hidden dark:block bg-gradient-to-t from-[#0F172A] via-transparent to-[#0F172A]/40 pointer-events-none" />
+      {/* Cinematic Dark Vignette & Dual Gradient Overlays for High Photo Contrast */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#03130C]/94 via-[#051F14]/84 to-[#092B1C]/70 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#03130C] via-transparent to-black/60 pointer-events-none" />
+      <div className="absolute inset-0 bg-black/20 pointer-events-none" />
 
       {/* Interactive Controls & Slide Badge (Thumb-friendly & Interactive) */}
       <div className="absolute bottom-4 left-4 sm:left-8 right-4 sm:right-8 flex items-center justify-between z-20 pointer-events-auto">
         {/* Active Slide Info Pill */}
-        <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-emerald-200/50 dark:border-emerald-800/40 shadow-xs text-xs">
-          <span className="flex items-center gap-1 font-semibold text-emerald-800 dark:text-emerald-300">
-            <Sparkles className="w-3.5 h-3.5 text-primary animate-sparkle" />
+        <div className="hidden sm:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-emerald-500/30 shadow-lg text-xs">
+          <span className="flex items-center gap-1 font-semibold text-emerald-400">
+            <Sparkles className="w-3.5 h-3.5 text-accent animate-sparkle" />
             {DEFAULT_SLIDES[currentIndex].badge}:
           </span>
-          <span className="text-gray-600 dark:text-gray-300 max-w-xs truncate">
+          <span className="text-gray-200 max-w-xs truncate">
             {DEFAULT_SLIDES[currentIndex].title}
           </span>
         </div>
 
         {/* Navigation & Progress Dots */}
-        <div className="flex items-center gap-2 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-emerald-200/50 dark:border-emerald-800/40 shadow-xs ml-auto">
+        <div className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-emerald-500/30 shadow-lg ml-auto">
           {/* Prev */}
           <button
             onClick={prevSlide}
             aria-label="Previous background photo"
-            className="p-1 rounded-full hover:bg-emerald-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200 transition-colors"
+            className="p-1 rounded-full hover:bg-white/15 text-gray-200 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -155,8 +151,8 @@ export const BackgroundSlideshow: React.FC<BackgroundSlideshowProps> = ({
                 aria-label={`Go to slide ${i + 1}`}
                 className={`transition-all duration-300 rounded-full ${
                   i === currentIndex
-                    ? "w-5 h-2 bg-primary shadow-xs"
-                    : "w-2 h-2 bg-gray-300 dark:bg-gray-600 hover:bg-emerald-400"
+                    ? "w-5 h-2 bg-accent shadow-xs"
+                    : "w-2 h-2 bg-white/30 hover:bg-emerald-400"
                 }`}
               />
             ))}
@@ -166,7 +162,7 @@ export const BackgroundSlideshow: React.FC<BackgroundSlideshowProps> = ({
           <button
             onClick={nextSlide}
             aria-label="Next background photo"
-            className="p-1 rounded-full hover:bg-emerald-100 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-200 transition-colors"
+            className="p-1 rounded-full hover:bg-white/15 text-gray-200 transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -175,7 +171,7 @@ export const BackgroundSlideshow: React.FC<BackgroundSlideshowProps> = ({
           <button
             onClick={() => setIsPlaying(!isPlaying)}
             aria-label={isPlaying ? "Pause background slideshow" : "Play background slideshow"}
-            className="p-1 ml-1 rounded-full hover:bg-emerald-100 dark:hover:bg-slate-800 text-gray-600 dark:text-gray-300 transition-colors"
+            className="p-1 ml-1 rounded-full hover:bg-white/15 text-gray-300 transition-colors"
           >
             {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
           </button>

@@ -46,17 +46,17 @@ export default function LandingPage() {
             
             {/* Left Column: Headlines & CTAs */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100/80 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs sm:text-sm font-bold shadow-xs">
-                <Sparkles className="w-4 h-4 text-primary animate-sparkle" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 text-xs sm:text-sm font-bold shadow-lg backdrop-blur-md">
+                <Sparkles className="w-4 h-4 text-accent animate-sparkle" />
                 <span>Community-powered clean city platform</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white tracking-tight leading-[1.12]">
-                <span className="text-primary block">Spot it. Post it.</span>
-                <span className="text-emerald-600 dark:text-emerald-400">Clean it together.</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.12]">
+                <span className="text-accent block drop-shadow-md">Spot it. Post it.</span>
+                <span className="text-white">Clean it together.</span>
               </h1>
 
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="text-base sm:text-lg text-emerald-100/90 max-w-xl mx-auto lg:mx-0 leading-relaxed font-medium drop-shadow-sm">
                 {t("heroSubtitle")}
               </p>
 
@@ -72,22 +72,22 @@ export default function LandingPage() {
 
                 <Link
                   href="/events"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl bg-white dark:bg-slate-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 border border-emerald-200 dark:border-slate-700 font-bold text-base shadow-soft hover:shadow-md transition-all transform hover:-translate-y-0.5"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-emerald-400/40 font-bold text-base shadow-soft hover:shadow-md backdrop-blur-md transition-all transform hover:-translate-y-0.5"
                 >
-                  <Users className="w-5 h-5 text-primary" />
+                  <Users className="w-5 h-5 text-accent" />
                   <span>{t("btnJoinCleanup")}</span>
                 </Link>
               </div>
 
               {/* Social Proof Avatars */}
-              <div className="pt-2 flex items-center justify-center lg:justify-start gap-3 text-xs text-gray-500 dark:text-gray-400">
+              <div className="pt-2 flex items-center justify-center lg:justify-start gap-3 text-xs text-emerald-200/80">
                 <div className="flex -space-x-2">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white text-white flex items-center justify-center font-bold text-xs">RK</div>
-                  <div className="w-8 h-8 rounded-full bg-sky-500 border-2 border-white text-white flex items-center justify-center font-bold text-xs">AS</div>
-                  <div className="w-8 h-8 rounded-full bg-amber-500 border-2 border-white text-white flex items-center justify-center font-bold text-xs">SP</div>
-                  <div className="w-8 h-8 rounded-full bg-purple-500 border-2 border-white text-white flex items-center justify-center font-bold text-xs">+</div>
+                  <div className="w-8 h-8 rounded-full bg-emerald-500 border-2 border-slate-900 text-white flex items-center justify-center font-bold text-xs">RK</div>
+                  <div className="w-8 h-8 rounded-full bg-sky-500 border-2 border-slate-900 text-white flex items-center justify-center font-bold text-xs">AS</div>
+                  <div className="w-8 h-8 rounded-full bg-amber-500 border-2 border-slate-900 text-white flex items-center justify-center font-bold text-xs">SP</div>
+                  <div className="w-8 h-8 rounded-full bg-purple-500 border-2 border-slate-900 text-white flex items-center justify-center font-bold text-xs">+</div>
                 </div>
-                <span>Joined by <strong className="text-gray-800 dark:text-gray-200">12,000+ citizens</strong> across {currentCity.name} and 58 Indian cities</span>
+                <span>Joined by <strong className="text-white font-semibold">12,000+ citizens</strong> across {currentCity.name} and 58 Indian cities</span>
               </div>
             </div>
 
@@ -95,22 +95,22 @@ export default function LandingPage() {
             <div className="lg:col-span-5 relative">
               <EcoHeroIllustration />
 
-              {/* Floating Live Report Preview Card (matches PDF Page 2) */}
-              <div className="absolute -bottom-6 -left-2 sm:-left-6 right-2 sm:right-6 glass-card-eco p-4 rounded-2xl shadow-float border border-emerald-200/80 dark:border-slate-700 animate-float pointer-events-auto">
+              {/* Floating Live Report Preview Card */}
+              <div className="absolute -bottom-6 -left-2 sm:-left-6 right-2 sm:right-6 bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-emerald-500/30 animate-float pointer-events-auto">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider border border-amber-500/30">
                         Plastic
                       </span>
-                      <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                      <span className="text-[11px] text-gray-400">
                         12 upvotes • Reported today
                       </span>
                     </div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    <p className="text-sm font-bold text-white">
                       Near Metro Pillar 42, Kukatpally
                     </p>
-                    <p className="text-xs text-emerald-700 dark:text-emerald-400 flex items-center gap-1 font-medium">
+                    <p className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
                       <span className="w-2 h-2 rounded-full bg-red-500 inline-block animate-ping" />
                       Status: Open Report in {currentCity.name}
                     </p>
@@ -131,19 +131,19 @@ export default function LandingPage() {
           {/* 2. Live Impact Counters Bar */}
           <div className="mt-16 sm:mt-24 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {[
-              { count: 12450, suffix: " kg", label: t("heroWasteCleaned"), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/40" },
-              { count: 3280, suffix: "+", label: t("heroReportsPosted"), color: "text-sky-600", bg: "bg-sky-50 dark:bg-sky-950/40" },
-              { count: 410, suffix: "+", label: t("heroCleanupEvents"), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/40" },
-              { count: 58, suffix: " cities", label: t("heroCitiesJoined"), color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-950/40" },
+              { count: 12450, suffix: " kg", label: t("heroWasteCleaned"), color: "text-emerald-400", bg: "bg-slate-900/85 backdrop-blur-xl border border-emerald-500/30 shadow-xl" },
+              { count: 3280, suffix: "+", label: t("heroReportsPosted"), color: "text-sky-400", bg: "bg-slate-900/85 backdrop-blur-xl border border-sky-500/30 shadow-xl" },
+              { count: 410, suffix: "+", label: t("heroCleanupEvents"), color: "text-amber-400", bg: "bg-slate-900/85 backdrop-blur-xl border border-amber-500/30 shadow-xl" },
+              { count: 58, suffix: " cities", label: t("heroCitiesJoined"), color: "text-purple-400", bg: "bg-slate-900/85 backdrop-blur-xl border border-purple-500/30 shadow-xl" },
             ].map((stat, idx) => (
               <div 
                 key={idx}
-                className={`p-5 sm:p-6 rounded-2xl ${stat.bg} border border-emerald-100 dark:border-slate-800 shadow-soft transition-transform hover:-translate-y-1`}
+                className={`p-6 rounded-3xl ${stat.bg} transition-all hover:scale-[1.02] text-center sm:text-left`}
               >
-                <div className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold ${stat.color} font-heading tracking-tight`}>
+                <div className={`text-3xl sm:text-4xl font-extrabold ${stat.color} mb-1 tracking-tight font-heading drop-shadow-sm`}>
                   <AnimatedCounter end={stat.count} suffix={stat.suffix} />
                 </div>
-                <div className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 mt-1 capitalize">
+                <div className="text-xs sm:text-sm font-semibold text-gray-300">
                   {stat.label}
                 </div>
               </div>
@@ -389,22 +389,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 6. Top City Communities Showcase */}
-      <section className="py-12 sm:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 6. Top City Communities Showcase (Rich Dark Background Section) */}
+      <section className="py-16 sm:py-24 bg-[#0A1F16] dark:bg-[#061710] text-white relative overflow-hidden">
+        {/* Background decorative glow */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-10 w-80 h-80 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
             <div>
-              <span className="text-xs uppercase font-extrabold text-primary tracking-widest">
+              <span className="text-xs uppercase font-extrabold text-accent tracking-widest">
                 Local Impact Groups
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mt-1">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
                 Active Organisations in {currentCity.name}
               </h2>
             </div>
             <Link
               href="/communities"
-              className="inline-flex items-center gap-1.5 text-sm font-bold text-primary hover:underline"
+              className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-300 hover:text-white transition-colors"
             >
               <span>Explore all communities</span>
               <ChevronRight className="w-4 h-4" />
@@ -415,34 +419,34 @@ export default function LandingPage() {
             {previewOrgs.map((org) => (
               <div 
                 key={org.id}
-                className="p-6 rounded-2xl bg-white dark:bg-slate-800 border border-emerald-100 dark:border-slate-700 shadow-soft hover:shadow-float transition-all"
+                className="p-6 rounded-3xl bg-slate-900/80 backdrop-blur-xl border border-emerald-500/25 shadow-2xl hover:border-emerald-400/50 transition-all hover:-translate-y-1"
               >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-accent text-white flex items-center justify-center font-extrabold text-lg shadow-sm">
                     {org.logo}
                   </div>
                   <div>
-                    <h3 className="font-bold text-base text-gray-900 dark:text-white">
+                    <h3 className="font-bold text-base text-white">
                       {org.name}
                     </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-emerald-200/70">
                       {org.memberCount} active volunteers
                     </p>
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 mb-4 leading-relaxed">
+                <p className="text-xs text-gray-300 line-clamp-2 mb-4 leading-relaxed">
                   {org.description}
                 </p>
 
-                <div className="grid grid-cols-2 gap-2 bg-emerald-50/60 dark:bg-slate-700/50 p-2.5 rounded-xl text-center mb-4 text-xs">
+                <div className="grid grid-cols-2 gap-2 bg-emerald-950/60 border border-emerald-800/40 p-2.5 rounded-xl text-center mb-4 text-xs">
                   <div>
-                    <span className="font-extrabold text-emerald-800 dark:text-emerald-300 block">{org.stats.kgCleaned} kg</span>
-                    <span className="text-gray-500 text-[10px]">Cleaned</span>
+                    <span className="font-extrabold text-emerald-400 block">{org.stats.kgCleaned} kg</span>
+                    <span className="text-gray-400 text-[10px]">Cleaned</span>
                   </div>
                   <div>
-                    <span className="font-extrabold text-emerald-800 dark:text-emerald-300 block">{org.stats.spotsCleaned}</span>
-                    <span className="text-gray-500 text-[10px]">Spots restored</span>
+                    <span className="font-extrabold text-emerald-400 block">{org.stats.spotsCleaned}</span>
+                    <span className="text-gray-400 text-[10px]">Spots restored</span>
                   </div>
                 </div>
 
