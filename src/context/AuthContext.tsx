@@ -8,9 +8,23 @@ interface AuthContextType {
   user: User | null;
   role: UserRole;
   isAuthenticated: boolean;
-  loginWithPhone: (phone: string, otp: string) => Promise<boolean>;
-  loginWithEmail: (email: string, pass?: string) => Promise<boolean>;
-  loginWithGoogle: () => Promise<boolean>;
+  loginWithPhone: (phone: string, otp: string, userDetails?: Partial<User>) => Promise<boolean>;
+  loginWithEmail: (email: string, pass?: string, userDetails?: Partial<User>) => Promise<boolean>;
+  loginWithGoogle: (userDetails?: Partial<User>) => Promise<boolean>;
+  loginWithCustomDetails: (details: {
+    name: string;
+    phone?: string;
+    email?: string;
+    countryName: string;
+    countryCode: string;
+    stateName?: string;
+    stateCode?: string;
+    cityName: string;
+    cityId: string;
+    place?: string;
+    role?: UserRole;
+  }) => Promise<boolean>;
+  updateUserProfile: (details: Partial<User>) => void;
   logout: () => void;
   switchRole: (role: UserRole) => void;
   awardPoints: (amount: number, reason: string) => void;
@@ -23,13 +37,15 @@ const AuthContext = createContext<AuthContextType>({
   loginWithPhone: async () => false,
   loginWithEmail: async () => false,
   loginWithGoogle: async () => false,
+  loginWithCustomDetails: async () => false,
+  updateUserProfile: () => {},
   logout: () => {},
   switchRole: () => {},
   awardPoints: () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Default to citizen demo user so app is immediately usable on load
+  // Default user profile
   const [user, setUser] = useState<User | null>(SEED_USERS[0]);
   const [role, setRole] = useState<UserRole>("citizen");
 
@@ -39,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const parsed = JSON.parse(savedUser);
         setUser(parsed);
-        setRole(parsed.role);
+        setRole(parsed.role || "citizen");
       } catch (e) {
         setUser(SEED_USERS[0]);
       }
@@ -58,14 +74,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithPhone = async (phone: string, otp: string): Promise<boolean> => {
-    // Verify 6-digit OTP
+  const loginWithCustomDetails = async (details: {
+    name: string;
+    phone?: string;
+    email?: string;
+    countryName: string;
+    countryCode: string;
+    stateName?: string;
+    stateCode?: string;
+    cityName: string;
+    cityId: string;
+    place?: string;
+    role?: UserRole;
+  }): Promise<boolean> => {
+    const newUser: User = {
+      id: `usr-${Date.now().toString().slice(-6)}`,
+      name: details.name.trim() || "Active Citizen",
+      phone: details.phone,
+      email: details.email,
+      countryName: details.countryName,
+      countryCode: details.countryCode,
+      stateName: details.stateName,
+      stateCode: details.stateCode,
+      cityName: details.cityName,
+      cityId: details.cityId.toLowerCase(),
+      place: details.place || `${details.cityName}, ${details.countryName}`,
+      role: details.role || "citizen",
+      points: 150,
+      level: "Reporter",
+      streak: 1,
+      trustScore: 99,
+      badges: ["First Login", "Global Citizen", "Neighborhood Watch"],
+      lang: "en",
+      createdAt: new Date().toISOString(),
+    };
+    persistUser(newUser);
+    return true;
+  };
+
+  const updateUserProfile = (details: Partial<User>) => {
+    if (!user) return;
+    const updated: User = {
+      ...user,
+      ...details,
+      name: details.name !== undefined ? details.name.trim() : user.name,
+    };
+    persistUser(updated);
+  };
+
+  const loginWithPhone = async (phone: string, otp: string, userDetails?: Partial<User>): Promise<boolean> => {
     if (otp.length === 6) {
       const u: User = {
-        ...SEED_USERS[0],
+        ...(user || SEED_USERS[0]),
         phone,
-        name: phone === "+91 94401 23456" ? "Dr. K. Srinivas Rao" : "Ravi Kumar",
-        role: phone === "+91 94401 23456" ? "officer" : "citizen",
+        name: userDetails?.name?.trim() || user?.name || (phone === "+91 94401 23456" ? "Dr. K. Srinivas Rao" : "Active Citizen"),
+        countryName: userDetails?.countryName || user?.countryName || "India",
+        countryCode: userDetails?.countryCode || user?.countryCode || "IN",
+        cityName: userDetails?.cityName || user?.cityName || "Hyderabad",
+        cityId: userDetails?.cityId || user?.cityId || "hyderabad",
+        place: userDetails?.place || user?.place,
+        role: phone === "+91 94401 23456" ? "officer" : (userDetails?.role || "citizen"),
       };
       persistUser(u);
       return true;
@@ -73,17 +141,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return false;
   };
 
-  const loginWithEmail = async (email: string, pass?: string): Promise<boolean> => {
+  const loginWithEmail = async (email: string, pass?: string, userDetails?: Partial<User>): Promise<boolean> => {
     const isOfficer = email.includes("officer") || email.includes("ghmc") || email.includes("gov");
     const isAdmin = email.includes("admin");
-    const chosen = isAdmin ? SEED_USERS[2] : isOfficer ? SEED_USERS[1] : SEED_USERS[0];
-    const u: User = { ...chosen, email };
+    const chosenRole: UserRole = isOfficer ? "officer" : isAdmin ? "admin" : (userDetails?.role || "citizen");
+    const u: User = { 
+      ...(user || SEED_USERS[0]), 
+      email,
+      name: userDetails?.name?.trim() || user?.name || (email.split("@")[0].replace(/[._-]/g, " ").replace(/\b\w/g, l => l.toUpperCase())),
+      countryName: userDetails?.countryName || user?.countryName || "India",
+      countryCode: userDetails?.countryCode || user?.countryCode || "IN",
+      cityName: userDetails?.cityName || user?.cityName || "Hyderabad",
+      cityId: userDetails?.cityId || user?.cityId || "hyderabad",
+      place: userDetails?.place || user?.place,
+      role: chosenRole,
+    };
     persistUser(u);
     return true;
   };
 
-  const loginWithGoogle = async (): Promise<boolean> => {
-    persistUser(SEED_USERS[0]);
+  const loginWithGoogle = async (userDetails?: Partial<User>): Promise<boolean> => {
+    const u: User = {
+      ...(user || SEED_USERS[0]),
+      name: userDetails?.name?.trim() || user?.name || "Google Citizen",
+      countryName: userDetails?.countryName || user?.countryName || "India",
+      countryCode: userDetails?.countryCode || user?.countryCode || "IN",
+      cityName: userDetails?.cityName || user?.cityName || "Hyderabad",
+      cityId: userDetails?.cityId || user?.cityId || "hyderabad",
+      place: userDetails?.place || user?.place,
+      role: userDetails?.role || "citizen",
+    };
+    persistUser(u);
     return true;
   };
 
@@ -92,6 +180,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const switchRole = (newRole: UserRole) => {
+    if (user) {
+      persistUser({ ...user, role: newRole });
+      return;
+    }
     const matching = SEED_USERS.find((u) => u.role === newRole) || {
       ...SEED_USERS[0],
       role: newRole,
@@ -124,6 +216,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithPhone,
         loginWithEmail,
         loginWithGoogle,
+        loginWithCustomDetails,
+        updateUserProfile,
         logout,
         switchRole,
         awardPoints,

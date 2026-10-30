@@ -12,7 +12,12 @@ interface LocationContextType {
   stateName: string;
   currentCity: City;
   availableCities: City[];
-  setLocation: (countryCode: string, stateCode: string, cityId: string) => void;
+  setLocation: (
+    countryCode: string, 
+    stateCode: string, 
+    cityId: string, 
+    details?: { countryName?: string; stateName?: string; cityName?: string; lat?: number; lng?: number }
+  ) => void;
   selectCity: (cityId: string) => void;
 }
 
@@ -67,10 +72,32 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const setLocation = (country: string, state: string, cityId: string) => {
+  const setLocation = (
+    country: string, 
+    state: string, 
+    cityId: string, 
+    details?: { countryName?: string; stateName?: string; cityName?: string; lat?: number; lng?: number }
+  ) => {
     setCountryCode(country);
+    if (details?.countryName) setCountryName(details.countryName);
     setStateCode(state);
-    selectCity(cityId);
+    if (details?.stateName) setStateName(details.stateName);
+
+    // Register or retrieve in mock store with custom details & coordinates
+    const city = mockStore.addOrGetCity({
+      id: cityId.toLowerCase(),
+      name: details?.cityName || cityId.charAt(0).toUpperCase() + cityId.slice(1).replace(/-/g, " "),
+      countryCode: country,
+      countryName: details?.countryName,
+      stateCode: state,
+      stateName: details?.stateName,
+      lat: details?.lat,
+      lng: details?.lng,
+    });
+
+    setCurrentCity(city);
+    localStorage.setItem("gc_city_id", city.id);
+    document.cookie = `gc_city_id=${city.id}; path=/; max-age=31536000`;
   };
 
   return (

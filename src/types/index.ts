@@ -8,6 +8,11 @@ export interface User {
   photoURL?: string;
   cityId: string;
   cityName?: string;
+  place?: string;
+  stateCode?: string;
+  stateName?: string;
+  countryCode?: string;
+  countryName?: string;
   role: UserRole;
   points: number;
   level: string; // 'Reporter' | 'Cleaner' | 'Eco Hero' | 'Green Champion'

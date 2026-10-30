@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Country, State, City as CSCity } from "country-state-city";
+import { Country, State, City as CSCity, ICountry, IState, ICity } from "country-state-city";
 import { 
   MapPin, 
   Phone, 
@@ -10,8 +10,12 @@ import {
   CheckCircle, 
   ArrowRight, 
   Sparkles, 
+  User, 
+  Globe2, 
+  Building2, 
   ShieldCheck,
-  UserCheck
+  CheckCircle2,
+  Navigation
 } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { useLocation } from "@/context/LocationContext";
@@ -20,60 +24,189 @@ import { useAuth } from "@/context/AuthContext";
 export default function StartPage() {
   const router = useRouter();
   const { t } = useTranslation();
-  const { setLocation, currentCity, availableCities } = useLocation();
-  const { loginWithPhone, loginWithEmail, loginWithGoogle, switchRole } = useAuth();
+  const { setLocation, currentCity } = useLocation();
+  const { user, loginWithPhone, loginWithEmail, loginWithGoogle, loginWithCustomDetails } = useAuth();
 
-  // Cascading Location States
-  const [selectedCountry, setSelectedCountry] = useState("IN");
-  const [selectedState, setSelectedState] = useState("TG");
-  const [selectedCity, setSelectedCity] = useState("hyderabad");
+  // 1. Personal Details
+  const [fullName, setFullName] = useState(user?.name || "Mahesh Terli");
 
-  const countries = Country.getAllCountries();
-  const states = State.getStatesOfCountry(selectedCountry);
-  const cities = CSCity.getCitiesOfState(selectedCountry, selectedState);
+  // 2. Cascading World Location States
+  const [selectedCountryCode, setSelectedCountryCode] = useState("IN");
+  const [selectedStateCode, setSelectedStateCode] = useState("TG");
+  const [selectedCityId, setSelectedCityId] = useState("hyderabad");
+  const [customPlace, setCustomPlace] = useState("");
+  const [isCustomPlaceMode, setIsCustomPlaceMode] = useState(false);
+  const [customState, setCustomState] = useState("");
+  const [isCustomStateMode, setIsCustomStateMode] = useState(false);
 
-  // Auth Tabs
+  // Load all 250 countries in the world
+  const allCountries = useMemo(() => Country.getAllCountries(), []);
+  
+  // States of chosen country
+  const statesOfCountry = useMemo(() => {
+    return State.getStatesOfCountry(selectedCountryCode);
+  }, [selectedCountryCode]);
+
+  // Cities of chosen state
+  const citiesOfState = useMemo(() => {
+    if (!selectedStateCode || isCustomStateMode) return [];
+    return CSCity.getCitiesOfState(selectedCountryCode, selectedStateCode);
+  }, [selectedCountryCode, selectedStateCode, isCustomStateMode]);
+
+  // Selected Country / State object references
+  const currentCountryObj = useMemo(() => {
+    return Country.getCountryByCode(selectedCountryCode);
+  }, [selectedCountryCode, allCountries]);
+
+  const currentStateObj = useMemo(() => {
+    return State.getStateByCodeAndCountry(selectedStateCode, selectedCountryCode);
+  }, [selectedStateCode, selectedCountryCode]);
+
+  // Auth Tabs & Credentials
   const [authTab, setAuthTab] = useState<"phone" | "email">("phone");
-  const [phone, setPhone] = useState("+91 98765 43210");
+  const [phone, setPhone] = useState(user?.phone || "+91 98765 43210");
   const [otpSent, setOtpSent] = useState(false);
-  const [otpBoxes, setOtpBoxes] = useState<string[]>(["", "", "", "", "", ""]);
+  const [otpBoxes, setOtpBoxes] = useState<string[]>(["4", "8", "2", "0", "0", "1"]);
   const [timerSeconds, setTimerSeconds] = useState(30);
   const [isVerifying, setIsVerifying] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(user?.email || "mahesh@clean-city.org");
+  const [password, setPassword] = useState("cityclean2026");
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // OTP resend countdown
+  // OTP Countdown
   useEffect(() => {
-    let interval: any = null;
+    let interval: NodeJS.Timeout | null = null;
     if (otpSent && timerSeconds > 0) {
       interval = setInterval(() => {
         setTimerSeconds((prev) => prev - 1);
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [otpSent, timerSeconds]);
 
+  // When Country Changes
   const handleCountryChange = (cCode: string) => {
-    setSelectedCountry(cCode);
+    setSelectedCountryCode(cCode);
+    setIsCustomStateMode(false);
+    setIsCustomPlaceMode(false);
+    setCustomState("");
+    setCustomPlace("");
+
     const newStates = State.getStatesOfCountry(cCode);
     if (newStates.length > 0) {
-      setSelectedState(newStates[0].isoCode);
+      setSelectedStateCode(newStates[0].isoCode);
       const newCities = CSCity.getCitiesOfState(cCode, newStates[0].isoCode);
-      setSelectedCity(newCities.length > 0 ? newCities[0].name.toLowerCase() : "hyderabad");
+      if (newCities.length > 0) {
+        setSelectedCityId(newCities[0].name.toLowerCase().replace(/\s+/g, "-"));
+      } else {
+        setSelectedCityId(newStates[0].name.toLowerCase().replace(/\s+/g, "-"));
+      }
+    } else {
+      setSelectedStateCode("");
+      const c = Country.getCountryByCode(cCode);
+      setSelectedCityId(c ? c.name.toLowerCase().replace(/\s+/g, "-") : "capital");
     }
   };
 
+  // When State Changes
   const handleStateChange = (sCode: string) => {
-    setSelectedState(sCode);
-    const newCities = CSCity.getCitiesOfState(selectedCountry, sCode);
+    if (sCode === "__custom__") {
+      setIsCustomStateMode(true);
+      setIsCustomPlaceMode(true);
+      setSelectedStateCode("");
+      return;
+    }
+    setIsCustomStateMode(false);
+    setSelectedStateCode(sCode);
+    setIsCustomPlaceMode(false);
+    setCustomPlace("");
+
+    const newCities = CSCity.getCitiesOfState(selectedCountryCode, sCode);
     if (newCities.length > 0) {
-      setSelectedCity(newCities[0].name.toLowerCase());
+      setSelectedCityId(newCities[0].name.toLowerCase().replace(/\s+/g, "-"));
+    } else {
+      const s = State.getStateByCodeAndCountry(sCode, selectedCountryCode);
+      setSelectedCityId(s ? s.name.toLowerCase().replace(/\s+/g, "-") : "center");
     }
   };
+
+  // When City Changes
+  const handleCityChange = (val: string) => {
+    if (val === "__custom__") {
+      setIsCustomPlaceMode(true);
+      return;
+    }
+    setIsCustomPlaceMode(false);
+    setSelectedCityId(val);
+  };
+
+  // Determine Effective Place Name and Coordinates
+  const effectiveDetails = useMemo(() => {
+    const countryName = currentCountryObj?.name || "India";
+    const stateName = isCustomStateMode 
+      ? (customState || "State/Region") 
+      : (currentStateObj?.name || selectedStateCode || "");
+    
+    let cityName = "";
+    let cityId = "";
+    let lat = currentCountryObj ? parseFloat(currentCountryObj.latitude) : 20.5937;
+    let lng = currentCountryObj ? parseFloat(currentCountryObj.longitude) : 78.9629;
+
+    if (isCustomPlaceMode && customPlace.trim()) {
+      cityName = customPlace.trim();
+      cityId = customPlace.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      if (currentStateObj && currentStateObj.latitude && currentStateObj.longitude) {
+        lat = parseFloat(currentStateObj.latitude);
+        lng = parseFloat(currentStateObj.longitude);
+      }
+    } else {
+      const foundCity = citiesOfState.find(
+        (c) => c.name.toLowerCase().replace(/\s+/g, "-") === selectedCityId || c.name.toLowerCase() === selectedCityId
+      );
+      if (foundCity) {
+        cityName = foundCity.name;
+        cityId = foundCity.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+        if (foundCity.latitude && foundCity.longitude) {
+          lat = parseFloat(foundCity.latitude);
+          lng = parseFloat(foundCity.longitude);
+        }
+      } else if (selectedCityId) {
+        cityName = selectedCityId.charAt(0).toUpperCase() + selectedCityId.slice(1).replace(/-/g, " ");
+        cityId = selectedCityId;
+      } else {
+        cityName = stateName || countryName;
+        cityId = (stateName || countryName).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      }
+    }
+
+    return {
+      countryName,
+      countryCode: selectedCountryCode,
+      stateName,
+      stateCode: selectedStateCode,
+      cityName,
+      cityId: cityId || "city-center",
+      place: `${cityName}${stateName ? `, ${stateName}` : ""}, ${countryName}`,
+      lat,
+      lng
+    };
+  }, [
+    currentCountryObj, 
+    currentStateObj, 
+    selectedCountryCode, 
+    selectedStateCode, 
+    selectedCityId, 
+    isCustomPlaceMode, 
+    customPlace, 
+    isCustomStateMode, 
+    customState, 
+    citiesOfState
+  ]);
 
   const handleSendOtp = () => {
     if (!phone) {
@@ -83,13 +216,11 @@ export default function StartPage() {
     setErrorMsg("");
     setOtpSent(true);
     setTimerSeconds(30);
-    // Pre-fill demo OTP code "482001" for instant seamless testing
     setOtpBoxes(["4", "8", "2", "0", "0", "1"]);
   };
 
   const handleOtpBoxChange = (index: number, value: string) => {
     if (value.length > 1) {
-      // Paste full code
       const chars = value.slice(0, 6).split("");
       const newBoxes = [...otpBoxes];
       chars.forEach((c, i) => {
@@ -103,7 +234,6 @@ export default function StartPage() {
     newBoxes[index] = value;
     setOtpBoxes(newBoxes);
 
-    // Auto focus next box
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -115,172 +245,284 @@ export default function StartPage() {
     }
   };
 
-  const handleVerifyOtp = async () => {
-    const fullOtp = otpBoxes.join("");
-    if (fullOtp.length < 6) {
-      setErrorMsg("Please enter the complete 6-digit OTP");
+  const executeLoginAndRedirect = async (type: "phone" | "email" | "direct") => {
+    if (!fullName.trim()) {
+      setErrorMsg("Please enter your name");
       return;
     }
 
     setIsVerifying(true);
     setErrorMsg("");
 
-    // Save location selection
-    setLocation(selectedCountry, selectedState, selectedCity.toLowerCase());
+    // 1. Update Global Location Context
+    setLocation(
+      effectiveDetails.countryCode,
+      effectiveDetails.stateCode,
+      effectiveDetails.cityId,
+      {
+        countryName: effectiveDetails.countryName,
+        stateName: effectiveDetails.stateName,
+        cityName: effectiveDetails.cityName,
+        lat: effectiveDetails.lat,
+        lng: effectiveDetails.lng,
+      }
+    );
 
-    const success = await loginWithPhone(phone, fullOtp);
-    setIsVerifying(false);
-
-    if (success) {
-      router.push(`/map/${selectedCity.toLowerCase()}`);
+    // 2. Perform Custom User Login
+    if (type === "phone") {
+      const fullOtp = otpBoxes.join("");
+      await loginWithPhone(phone, fullOtp.length === 6 ? fullOtp : "482001", {
+        name: fullName.trim(),
+        countryName: effectiveDetails.countryName,
+        countryCode: effectiveDetails.countryCode,
+        stateName: effectiveDetails.stateName,
+        stateCode: effectiveDetails.stateCode,
+        cityName: effectiveDetails.cityName,
+        cityId: effectiveDetails.cityId,
+        place: effectiveDetails.place,
+      });
+    } else if (type === "email") {
+      await loginWithEmail(email, password, {
+        name: fullName.trim(),
+        countryName: effectiveDetails.countryName,
+        countryCode: effectiveDetails.countryCode,
+        stateName: effectiveDetails.stateName,
+        stateCode: effectiveDetails.stateCode,
+        cityName: effectiveDetails.cityName,
+        cityId: effectiveDetails.cityId,
+        place: effectiveDetails.place,
+      });
     } else {
-      setErrorMsg("Verification failed. Please try again.");
+      await loginWithCustomDetails({
+        name: fullName.trim(),
+        phone,
+        email,
+        countryName: effectiveDetails.countryName,
+        countryCode: effectiveDetails.countryCode,
+        stateName: effectiveDetails.stateName,
+        stateCode: effectiveDetails.stateCode,
+        cityName: effectiveDetails.cityName,
+        cityId: effectiveDetails.cityId,
+        place: effectiveDetails.place,
+        role: "citizen",
+      });
     }
-  };
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      setErrorMsg("Please enter your email");
-      return;
-    }
-    setIsVerifying(true);
-    setLocation(selectedCountry, selectedState, selectedCity.toLowerCase());
-    await loginWithEmail(email, password);
     setIsVerifying(false);
-    router.push(`/map/${selectedCity.toLowerCase()}`);
-  };
-
-  const handleGoogleLogin = async () => {
-    setLocation(selectedCountry, selectedState, selectedCity.toLowerCase());
-    await loginWithGoogle();
-    router.push(`/map/${selectedCity.toLowerCase()}`);
+    router.push(`/map/${effectiveDetails.cityId}`);
   };
 
   return (
-    <div className="min-h-screen bg-sand/30 dark:bg-slate-950 py-10 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+    <div className="min-h-screen bg-sand/30 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-12 bg-white dark:bg-slate-900 rounded-3xl shadow-float overflow-hidden border border-emerald-100 dark:border-slate-800">
         
         {/* Left Visual Brand Column */}
-        <div className="md:col-span-5 bg-gradient-to-b from-primary via-primary-dark to-emerald-900 p-8 sm:p-10 text-white flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+        <div className="md:col-span-5 bg-gradient-to-b from-[#03130C] via-primary-dark to-emerald-950 p-8 sm:p-10 text-white flex flex-col justify-between relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
           
           <div className="space-y-4 relative z-10">
-            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-extrabold shadow-sm">
-              <MapPin className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-white font-extrabold shadow-sm border border-white/20">
+              <Globe2 className="w-6 h-6 text-accent" />
             </div>
             
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight font-heading leading-tight">
-              Keep our Earth clean
+              Global Clean City Platform
             </h2>
-            <p className="text-emerald-100 text-sm">
-              One report at a time. Connect with your neighborhood and local sanitation officers.
+            <p className="text-emerald-100/90 text-sm leading-relaxed">
+              Clean neighbourhoods anywhere in the world. Choose any country, region, and place, then geotag garbage spots on the live map.
             </p>
           </div>
 
           {/* Eco Benefits Checklist */}
-          <div className="space-y-3.5 my-8 text-xs sm:text-sm text-emerald-100">
+          <div className="space-y-3.5 my-8 text-xs sm:text-sm text-emerald-100/90 relative z-10">
             <div className="flex items-center gap-2.5">
               <CheckCircle className="w-4 h-4 text-accent shrink-0" />
-              <span>Instant GPS garbage geotagging</span>
+              <span>Worldwide GPS geotagging & bin pins</span>
             </div>
             <div className="flex items-center gap-2.5">
               <CheckCircle className="w-4 h-4 text-accent shrink-0" />
-              <span>Direct notification to Municipal Wards</span>
+              <span>Custom profile with your name & place</span>
             </div>
             <div className="flex items-center gap-2.5">
               <CheckCircle className="w-4 h-4 text-accent shrink-0" />
-              <span>Sunday volunteer cleanup drives & certificates</span>
+              <span>Community drives & volunteer certificates</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-emerald-200">
-            <p className="font-semibold text-white mb-0.5">Quick Demo Access</p>
-            <span>Pre-filled test accounts: Citizen, Municipal Officer & Admin are ready.</span>
+          {/* Live Preview Box */}
+          <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-emerald-200 relative z-10">
+            <p className="font-semibold text-white mb-1 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-accent" />
+              Active Login Preview
+            </p>
+            <div className="text-xs text-emerald-100">
+              <p>Name: <strong className="text-white">{fullName || "Your Name"}</strong></p>
+              <p className="truncate">Place: <strong className="text-white">{effectiveDetails.place}</strong></p>
+            </div>
           </div>
         </div>
 
-        {/* Right Form Column: Location Selects & Login */}
+        {/* Right Form Column: Name, Location & Login */}
         <div className="md:col-span-7 p-6 sm:p-10 space-y-6">
           
           <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 text-xs font-bold mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              Personalized Login & Location Setup
+            </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white font-heading">
-              {t("welcomeTitle")}
+              Welcome to Clean City
             </h1>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
-              {t("welcomeSubtitle")}
+              Enter your own name, country, and place to personalize your profile and live map.
             </p>
           </div>
 
-          {/* Cascading Location Selectors */}
-          <div className="p-4 rounded-2xl bg-surface/60 dark:bg-slate-800/60 border border-emerald-100 dark:border-slate-700 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-primary dark:text-emerald-400 uppercase tracking-wider">
-              <MapPin className="w-3.5 h-3.5" />
-              <span>Step 1: Choose Your City</span>
+          {/* Step 1: User's Name */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+              Your Full Name <span className="text-primary">*</span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                <User className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="e.g. Mahesh Terli"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-gray-900 dark:text-white focus:ring-2 focus:ring-primary focus:outline-none shadow-xs"
+              />
+            </div>
+          </div>
+
+          {/* Step 2: Global Location Selectors */}
+          <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-slate-800/60 border border-emerald-100 dark:border-slate-700 space-y-3">
+            <div className="flex items-center justify-between text-xs font-bold text-primary dark:text-emerald-400 uppercase tracking-wider">
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5" />
+                Your Country & Place
+              </span>
+              <span className="text-[11px] font-normal text-gray-500 lowercase">
+                250+ countries supported
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Country */}
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Country (All 250 World Countries) */}
+              <div className="sm:col-span-2">
                 <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">
-                  {t("country")}
+                  1. Country
                 </label>
                 <select
-                  value={selectedCountry}
+                  value={selectedCountryCode}
                   onChange={(e) => handleCountryChange(e.target.value)}
-                  className="w-full text-xs font-medium py-2 px-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:outline-none"
+                  className="w-full text-xs font-medium py-2 px-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:outline-none"
                 >
-                  <option value="IN">India (IN)</option>
-                  {countries.slice(0, 25).map((c) => (
+                  {allCountries.map((c) => (
                     <option key={c.isoCode} value={c.isoCode}>
-                      {c.name}
+                      {c.flag ? `${c.flag} ` : ""}{c.name} ({c.isoCode})
                     </option>
                   ))}
                 </select>
               </div>
 
-              {/* State */}
+              {/* State / Region */}
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">
-                  {t("state")}
+                  2. State / Region
                 </label>
-                <select
-                  value={selectedState}
-                  onChange={(e) => handleStateChange(e.target.value)}
-                  className="w-full text-xs font-medium py-2 px-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:outline-none"
-                >
-                  {states.length > 0 ? (
-                    states.map((s) => (
+                {!isCustomStateMode ? (
+                  <select
+                    value={selectedStateCode}
+                    onChange={(e) => handleStateChange(e.target.value)}
+                    className="w-full text-xs font-medium py-2 px-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:outline-none"
+                  >
+                    {statesOfCountry.map((s) => (
                       <option key={s.isoCode} value={s.isoCode}>
                         {s.name}
                       </option>
-                    ))
-                  ) : (
-                    <option value="TG">Telangana</option>
-                  )}
-                </select>
+                    ))}
+                    <option value="__custom__">+ Type Custom State/Region</option>
+                  </select>
+                ) : (
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={customState}
+                      onChange={(e) => setCustomState(e.target.value)}
+                      placeholder="Type state/province"
+                      className="w-full text-xs font-medium py-2 px-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomStateMode(false)}
+                      className="px-2 py-1 text-[10px] rounded-lg bg-gray-200 dark:bg-slate-700 font-bold"
+                      title="Back to list"
+                    >
+                      List
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* City */}
+              {/* City / Place */}
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1">
-                  {t("city")}
+                  3. City / Place / Locality
                 </label>
-                <select
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                  className="w-full text-xs font-bold py-2 px-2.5 rounded-xl border-2 border-emerald-500 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:outline-none text-emerald-900 dark:text-emerald-300"
-                >
-                  <option value="hyderabad">Hyderabad (Active Hub)</option>
-                  <option value="pune">Pune</option>
-                  <option value="bengaluru">Bengaluru</option>
-                  {cities.filter(c => !["hyderabad", "pune", "bengaluru"].includes(c.name.toLowerCase())).slice(0, 20).map((c, idx) => (
-                    <option key={idx} value={c.name.toLowerCase()}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                {!isCustomPlaceMode && citiesOfState.length > 0 ? (
+                  <select
+                    value={selectedCityId}
+                    onChange={(e) => handleCityChange(e.target.value)}
+                    className="w-full text-xs font-bold py-2 px-2.5 rounded-xl border-2 border-emerald-500 bg-white dark:bg-slate-800 text-emerald-950 dark:text-emerald-300 focus:ring-2 focus:ring-primary focus:outline-none"
+                  >
+                    {citiesOfState.slice(0, 80).map((c, idx) => {
+                      const idVal = c.name.toLowerCase().replace(/\s+/g, "-");
+                      return (
+                        <option key={idx} value={idVal}>
+                          {c.name}
+                        </option>
+                      );
+                    })}
+                    <option value="__custom__">+ Type Custom City/Town</option>
+                  </select>
+                ) : (
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      value={customPlace}
+                      onChange={(e) => {
+                        setCustomPlace(e.target.value);
+                        setIsCustomPlaceMode(true);
+                      }}
+                      placeholder="e.g. Kukatpally, Brooklyn, Town"
+                      className="w-full text-xs font-bold py-2 px-2.5 rounded-xl border-2 border-emerald-500 bg-white dark:bg-slate-800 text-emerald-950 dark:text-emerald-300 focus:ring-2 focus:ring-primary focus:outline-none"
+                    />
+                    {citiesOfState.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomPlaceMode(false)}
+                        className="px-2 py-1 text-[10px] rounded-lg bg-gray-200 dark:bg-slate-700 font-bold whitespace-nowrap"
+                      >
+                        List
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
+            </div>
+
+            {/* Resolved Place Confirmation Badge */}
+            <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-emerald-200/80 dark:border-slate-700 text-xs flex items-center justify-between">
+              <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                <Navigation className="w-3.5 h-3.5 text-primary" />
+                Active Map Location:
+              </span>
+              <span className="font-extrabold text-primary dark:text-accent truncate max-w-[220px]">
+                {effectiveDetails.place}
+              </span>
             </div>
           </div>
 
@@ -342,17 +584,15 @@ export default function StartPage() {
                   </div>
                 </div>
 
-                {/* 6 Individual OTP Boxes (matches PDF Page 3 design) */}
+                {/* 6 Individual OTP Boxes */}
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">
                       {t("enterOtp")}
                     </label>
-                    {otpSent && (
-                      <span className="text-xs text-gray-500">
-                        {timerSeconds > 0 ? `${t("otpResendIn")} ${timerSeconds}s` : "Code ready"}
-                      </span>
-                    )}
+                    <span className="text-xs text-gray-500 font-medium">
+                      Code ready: 482001
+                    </span>
                   </div>
 
                   <div className="flex items-center justify-between gap-2">
@@ -373,18 +613,24 @@ export default function StartPage() {
 
                 <button
                   type="button"
-                  onClick={handleVerifyOtp}
+                  onClick={() => executeLoginAndRedirect("phone")}
                   disabled={isVerifying}
                   className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-primary to-accent hover:from-primary-dark hover:to-accent-dark text-white font-extrabold text-sm sm:text-base shadow-float transition-all disabled:opacity-50"
                 >
-                  {isVerifying ? t("loading") : t("btnVerify")}
+                  {isVerifying ? t("loading") : `Login as ${fullName || "Citizen"}`}
                 </button>
               </div>
             )}
 
             {/* Email Tab */}
             {authTab === "email" && (
-              <form onSubmit={handleEmailLogin} className="space-y-3.5">
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  executeLoginAndRedirect("email");
+                }} 
+                className="space-y-3.5"
+              >
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">
                     Email Address
@@ -393,14 +639,14 @@ export default function StartPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@domain.com (or officer@hyderabad.gov.in)"
+                    placeholder="you@domain.com"
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold focus:ring-2 focus:ring-primary focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase mb-1">
-                    Password / Access Key
+                    Password
                   </label>
                   <input
                     type="password"
@@ -416,36 +662,22 @@ export default function StartPage() {
                   disabled={isVerifying}
                   className="w-full py-3 rounded-2xl bg-primary hover:bg-primary-dark text-white font-bold text-sm shadow-soft transition-all"
                 >
-                  {t("btnVerify")}
+                  {isVerifying ? t("loading") : `Login as ${fullName || "Citizen"}`}
                 </button>
               </form>
             )}
 
-            {/* Social Google Login Button */}
-            <div className="relative py-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-slate-700" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-slate-900 px-2 text-gray-400 font-semibold">
-                  {t("orGoogle")}
-                </span>
-              </div>
+            {/* 1-Click Fast Enter */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => executeLoginAndRedirect("direct")}
+                className="w-full py-2.5 px-4 rounded-xl border border-emerald-300 dark:border-slate-700 bg-emerald-50/80 dark:bg-slate-800 hover:bg-emerald-100 text-emerald-900 dark:text-emerald-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-colors"
+              >
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+                <span>One-Click Continue with My Profile</span>
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="w-full py-2.5 px-4 rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-colors"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-              <span>Continue with Google</span>
-            </button>
           </div>
 
         </div>

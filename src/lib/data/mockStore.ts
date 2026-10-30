@@ -257,7 +257,153 @@ class DataStore {
   }
 
   public getCity(cityId: string): City | undefined {
-    return this.cities.find((c) => c.id.toLowerCase() === cityId.toLowerCase()) || this.cities[0];
+    const found = this.cities.find((c) => c.id.toLowerCase() === cityId.toLowerCase());
+    if (found) return found;
+    const formattedName = cityId.charAt(0).toUpperCase() + cityId.slice(1).replace(/-/g, " ");
+    return this.addOrGetCity({
+      id: cityId.toLowerCase(),
+      name: formattedName,
+    });
+  }
+
+  public addOrGetCity(cityInput: {
+    id: string;
+    name: string;
+    countryCode?: string;
+    countryName?: string;
+    stateCode?: string;
+    stateName?: string;
+    lat?: number;
+    lng?: number;
+  }): City {
+    const existing = this.cities.find((c) => c.id.toLowerCase() === cityInput.id.toLowerCase());
+    if (existing) {
+      if (cityInput.lat && cityInput.lng && (!existing.lat || !existing.lng || (existing.lat === 17.4435 && existing.id !== "hyderabad"))) {
+        existing.lat = cityInput.lat;
+        existing.lng = cityInput.lng;
+      }
+      if (cityInput.countryCode) existing.countryCode = cityInput.countryCode;
+      if (cityInput.stateCode) existing.stateCode = cityInput.stateCode;
+      if (cityInput.stateName) existing.stateName = cityInput.stateName;
+      this.persist();
+      return existing;
+    }
+
+    const lat = cityInput.lat || 20.5937;
+    const lng = cityInput.lng || 78.9629;
+    const newCity: City = {
+      id: cityInput.id.toLowerCase(),
+      name: cityInput.name,
+      stateCode: cityInput.stateCode || "",
+      stateName: cityInput.stateName || "",
+      countryCode: cityInput.countryCode || "IN",
+      lat,
+      lng,
+      cleanlinessScore: Math.floor(Math.random() * 20) + 75,
+      officerEmails: [`sanitation.${cityInput.id.toLowerCase()}@civic-authority.gov`],
+      stats: {
+        totalReports: 14,
+        cleanedReports: 9,
+        inProgressReports: 3,
+        openReports: 2,
+        volunteersCount: 65,
+        kgCleaned: 2450,
+      },
+      wards: [
+        { id: `ward-${cityInput.id}-1`, name: `Ward 1 - ${cityInput.name} Central` },
+        { id: `ward-${cityInput.id}-2`, name: `Ward 2 - ${cityInput.name} North` },
+        { id: `ward-${cityInput.id}-3`, name: `Ward 3 - ${cityInput.name} South` },
+        { id: `ward-${cityInput.id}-4`, name: `Ward 4 - ${cityInput.name} West` },
+      ],
+    };
+
+    this.cities.unshift(newCity);
+
+    // Seed initial realistic pins for this city anywhere on earth
+    const sampleReports: Report[] = [
+      {
+        id: `rep-${cityInput.id}-1`,
+        userId: "user-citizen-1",
+        userName: "Community Watch",
+        anonymous: false,
+        mediaUrls: ["https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?auto=format&fit=crop&w=800&q=80"],
+        mediaType: "image",
+        lat: lat + 0.007,
+        lng: lng + 0.005,
+        geohash: encodeGeohash(lat + 0.007, lng + 0.005),
+        address: `Central Plaza & Main St, ${cityInput.name}`,
+        cityId: newCity.id,
+        cityName: newCity.name,
+        wardId: newCity.wards[0].id,
+        wardName: newCity.wards[0].name,
+        types: ["plastic", "household"],
+        severity: "medium",
+        status: "reported",
+        description: `Discarded single-use packaging and litter reported near pedestrian walkway.`,
+        upvotes: 16,
+        stillDirtyCount: 0,
+        volunteerIds: [],
+        flagged: false,
+        createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+        updatedAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+      },
+      {
+        id: `rep-${cityInput.id}-2`,
+        userId: "user-citizen-1",
+        userName: "Eco Volunteer",
+        anonymous: false,
+        mediaUrls: ["https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80"],
+        mediaType: "image",
+        lat: lat - 0.005,
+        lng: lng + 0.007,
+        geohash: encodeGeohash(lat - 0.005, lng + 0.007),
+        address: `Transit Station Park, ${cityInput.name}`,
+        cityId: newCity.id,
+        cityName: newCity.name,
+        wardId: newCity.wards[1].id,
+        wardName: newCity.wards[1].name,
+        types: ["plastic"],
+        severity: "small",
+        status: "in_progress",
+        description: `Weekend cleanup volunteers actively collecting and sorting plastic waste.`,
+        upvotes: 24,
+        stillDirtyCount: 0,
+        volunteerIds: ["user-citizen-1"],
+        flagged: false,
+        createdAt: new Date(Date.now() - 3600000 * 7).toISOString(),
+        updatedAt: new Date(Date.now() - 3600000 * 1).toISOString(),
+      },
+      {
+        id: `rep-${cityInput.id}-3`,
+        userId: "user-officer-1",
+        userName: "Zonal Sanitation Lead",
+        anonymous: false,
+        mediaUrls: ["https://images.unsplash.com/photo-1519331379826-f10be5486c6f?auto=format&fit=crop&w=800&q=80"],
+        mediaType: "image",
+        lat: lat + 0.003,
+        lng: lng - 0.006,
+        geohash: encodeGeohash(lat + 0.003, lng - 0.006),
+        address: `Community Greenbelt, ${cityInput.name}`,
+        cityId: newCity.id,
+        cityName: newCity.name,
+        wardId: newCity.wards[2].id,
+        wardName: newCity.wards[2].name,
+        types: ["debris", "plastic"],
+        severity: "large",
+        status: "cleaned",
+        description: `Spot cleared and certified clean. Bins emptied and area sanitized.`,
+        upvotes: 42,
+        stillDirtyCount: 0,
+        volunteerIds: [],
+        flagged: false,
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        updatedAt: new Date(Date.now() - 7200000).toISOString(),
+      }
+    ];
+
+    this.reports.push(...sampleReports);
+    this.persist();
+    return newCity;
   }
 
   // --- Organizations ---
