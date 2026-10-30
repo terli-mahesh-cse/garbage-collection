@@ -46,15 +46,13 @@ if "%choice%"=="2" (
 if "%choice%"=="3" (
     echo.
     echo ========================================================
-    echo Push to GitHub Instructions
+    echo Pushing latest updates to GitHub...
+    echo Repository: https://github.com/terli-mahesh-cse/garbage-collection
     echo ========================================================
-    echo 1. Create a repository on GitHub (https://github.com/new)
-    echo    named "garbage-collection"
-    echo 2. Run these two commands in PowerShell:
+    cd /d "%~dp0"
+    call git push origin main
     echo.
-    echo    git remote add origin https://github.com/terli-mahesh-cse/garbage-collection.git
-    echo    git push -u origin main
-    echo.
+    echo [OK] All latest code is pushed and synchronized with GitHub!
     goto done
 )
 
